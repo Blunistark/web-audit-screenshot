@@ -25,8 +25,9 @@ npm start
 ```
 
 ### Step 4: Update Browser Extension
-Update the browser extension to use your API URL:
-- Change from `localhost:8081` to `https://api.webaudits.logiclaunch.in`
+The browser extension is now configured to use:
+- Production API: `https://web-audit-screenshot.onrender.com`
+- Development API: `localhost:8081`
 
 ## API Endpoints
 

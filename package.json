@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "API server for Web Audit Tool screenshot uploads",
   "main": "server.js",
-  "type": "module",
-  "scripts": {
+  "type": "module",  "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },

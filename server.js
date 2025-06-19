@@ -109,15 +109,55 @@ app.post('/api/screenshot', upload.single('screenshot'), (req, res) => {
             message: 'Screenshot uploaded successfully',
             url: `/uploads/${req.file.filename}`,
             size: req.file.size
-        };
-
-        console.log('Upload successful:', response);
+        };        console.log('Upload successful:', response);
         res.json(response);
     } catch (error) {
         console.error('Error in screenshot upload:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Internal server error',
+            message: error.message 
+        });
+    }
+});
+
+// Get recent screenshots endpoint for browser extension integration
+app.get('/api/screenshots', (req, res) => {
+    try {
+        // Since this is a simple file-based API, we'll read the uploads directory
+        const screenshots = [];
+        
+        if (fs.existsSync(uploadsDir)) {
+            const files = fs.readdirSync(uploadsDir);
+            const imageFiles = files
+                .filter(file => file.match(/\.(png|jpg|jpeg|gif)$/i))
+                .sort((a, b) => {
+                    const statA = fs.statSync(path.join(uploadsDir, a));
+                    const statB = fs.statSync(path.join(uploadsDir, b));
+                    return statB.mtime.getTime() - statA.mtime.getTime(); // Newest first
+                })
+                .slice(0, 10); // Last 10 screenshots
+
+            imageFiles.forEach(file => {
+                const filePath = path.join(uploadsDir, file);
+                const stats = fs.statSync(filePath);
+                screenshots.push({
+                    filename: file,
+                    url: `/uploads/${file}`,
+                    metadata: {
+                        timestamp: stats.mtime.toISOString(),
+                        size: stats.size
+                    }
+                });
+            });
+        }
+
+        res.json({ screenshots });
+    } catch (error) {
+        console.error('Error fetching screenshots:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to fetch screenshots',
             message: error.message 
         });
     }
@@ -193,10 +233,10 @@ app.use((error, req, res, next) => {
 app.use((req, res) => {
     res.status(404).json({
         success: false,
-        error: 'Endpoint not found',
-        available_endpoints: [
+        error: 'Endpoint not found',        available_endpoints: [
             'GET /',
             'GET /api/health',
+            'GET /api/screenshots',
             'POST /api/screenshot',
             'POST /api/screenshot/base64',
             'GET /uploads/:filename'
@@ -206,10 +246,10 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 Web Audit API Server running on port ${PORT}`);
-    console.log(`📁 Uploads directory: ${uploadsDir}`);
-    console.log(`🌐 Available endpoints:`);
+    console.log(`📁 Uploads directory: ${uploadsDir}`);    console.log(`🌐 Available endpoints:`);
     console.log(`   GET  http://localhost:${PORT}/`);
     console.log(`   GET  http://localhost:${PORT}/api/health`);
+    console.log(`   GET  http://localhost:${PORT}/api/screenshots`);
     console.log(`   POST http://localhost:${PORT}/api/screenshot`);
     console.log(`   POST http://localhost:${PORT}/api/screenshot/base64`);
     console.log(`   GET  http://localhost:${PORT}/uploads/:filename`);
